@@ -1,5 +1,7 @@
 import express, { Request, Response } from "express";
-import { initDB, pool } from "./config/db";
+import { initDB } from "./config/db";
+import { authRoutes } from "./modules/auth/auth.routes";
+import { TodoRouter } from "./modules/todo/todo.routes";
 import { UserRoutes } from "./modules/user/user.routes";
 
 const app = express();
@@ -15,41 +17,16 @@ app.get("/", (req: Request, res: Response) => {
 
 app.use("/users", UserRoutes.router);
 
-app.get("/todos", async (req: Request, res: Response) => {
-  try {
-    const result = await pool.query(
-      `
-        SELECT * FROM todos
-        `
-    );
-    res.status(200).json({
-      success: true,
-      message: "data fetched successfully!",
-      result: result.rows,
-    });
-  } catch (err: any) {
-    console.log(err.message);
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
+app.use("/todos", TodoRouter.router);
 
-app.post("/todos", async (req: Request, res: Response) => {
-  const { user_id, title } = req.body;
-  try {
-    const result = await pool.query(
-      `
-      INSERT INTO todos(user_id, title) VALUES($1, $2) RETURNING *
-      `,
-      [user_id, title]
-    );
-    res.status(200).json({
-      success: true,
-      message: "todo has been inserted successfully!",
-      data: result.rows[0],
-    });
-  } catch (err: any) {
-    res.status(500).json({ success: false, message: err.message });
-  }
+app.use("/auth", authRoutes.router);
+
+app.use((req: Request, res: Response) => {
+  res.status(404).json({
+    success: false,
+    message: "Route not found",
+    path: req.path,
+  });
 });
 
 app.listen(port, () => {
