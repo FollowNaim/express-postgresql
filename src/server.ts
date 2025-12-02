@@ -57,16 +57,123 @@ app.post("/users", async (req: Request, res: Response) => {
         RETURNING*`,
       [name, email]
     );
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "data inserted",
-        result: result.rows[0],
-      });
+    res.status(200).json({
+      success: true,
+      message: "data inserted",
+      result: result.rows[0],
+    });
   } catch (err: any) {
     console.log(err.message);
     res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get("/todos", async (req: Request, res: Response) => {
+  try {
+    const result = await pool.query(
+      `
+        SELECT * FROM todos
+        `
+    );
+    res.status(200).json({
+      success: true,
+      message: "data fetched successfully!",
+      result: result.rows,
+    });
+  } catch (err: any) {
+    console.log(err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post("/todos", async (req: Request, res: Response) => {
+  const { user_id, title } = req.body;
+  try {
+    const result = await pool.query(
+      `
+      INSERT INTO todos(user_id, title) VALUES($1, $2) RETURNING *
+      `,
+      [user_id, title]
+    );
+    res.status(200).json({
+      success: true,
+      message: "todo has been inserted successfully!",
+      data: result.rows[0],
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.get("/users", async (req: Request, res: Response) => {
+  try {
+    const result = await pool.query(
+      `
+      SELECT * FROM users
+      `
+    );
+    res.status(200).json({
+      success: true,
+      message: result.rows,
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.get("/users/:id", async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query(
+      `
+      SELECT * FROM users WHERE id=$1
+      `,
+      [id]
+    );
+    res.status(200).json({
+      success: true,
+      message: result.rows,
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.put("/users/:id", async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { name } = req.body;
+  try {
+    const result = await pool.query(
+      `
+      UPDATE users SET name=$1 WHERE id=$2 RETURNING *
+      `,
+      [name, id]
+    );
+    res.status(200).json({
+      success: true,
+      message: "Data updated successfully!",
+      data: result.rows,
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.delete("/users/:id", async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    await pool.query(
+      `
+      DELETE FROM users WHERE id=$1
+      `,
+      [id]
+    );
+    res.status(200).json({
+      success: true,
+      message: "user deleted successfully!",
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 
